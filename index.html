@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CRM - Contador de Agendamentos</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: Arial, sans-serif; }
+
+    body {
+      --bg: #0f172a;
+      --card: #1e293b;
+      --secondary: #334155;
+      --text: #ffffff;
+      --input: #ffffff;
+
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      transition: all 0.4s ease;
+    }
+
+    body.light {
+      --bg: #f1f5f9;
+      --card: #ffffff;
+      --secondary: #e2e8f0;
+      --text: #0f172a;
+      --input: #0f172a;
+    }
+
+    .container {
+      width: 95%;
+      max-width: 1200px;
+      background: var(--card);
+      padding: 20px;
+      border-radius: 16px;
+      transition: 0.4s;
+    }
+
+    h1 { text-align: center; margin-bottom: 20px; font-family: Verdana, Geneva, Tahoma, sans-serif; }
+    h2 {text-align: center; margin-bottom: 20px; font-size: small; }
+
+    .top { display: flex; gap: 20px; flex-wrap: wrap; }
+
+    .card {
+      flex: 1;
+      min-width: 200px;
+      background: var(--secondary);
+      padding: 20px;
+      border-radius: 12px;
+      text-align: center;
+      transition: 0.3s;
+    }
+
+    .form-area, .filters {
+      margin: 20px 0;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    input, select {
+      padding: 10px;
+      border-radius: 8px;
+      border: none;
+      background: var(--secondary);
+      color: var(--text);
+    }
+
+    input::placeholder {
+      color: #94a3b8;
+    }
+
+    .btn {
+      background: #22c55e;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 8px;
+      color: white;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    .toggle-theme {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: #3b82f6;
+    }
+
+    .charts { margin-top: 20px; display: grid; gap: 20px; }
+
+    canvas {
+      background: var(--bg);
+      border-radius: 12px;
+      padding: 10px;
+      transition: 0.4s;
+    }
+
+    .log {
+      margin-top: 20px;
+      max-height: 200px;
+      overflow-y: auto;
+      background: var(--bg);
+      padding: 10px;
+      border-radius: 10px;
+      transition: 0.4s;
+    }
+
+    .log-item {
+      padding: 8px;
+      border-bottom: 1px solid var(--secondary);
+    }
+  </style>
+</head>
+<body>
+
+  <button class="btn toggle-theme" onclick="toggleTheme()">🌙 / ☀️</button>
+
+  <div class="container">
+    <h1>📊 CRM - Agendamentos</h1>
+    <h2>Desenvolvido pelo meu amor ❤️</h2>
+    
+
+    <div class="top">
+      <div class="card"><p>Hoje</p><h2 id="today">0</h2></div>
+      <div class="card"><p>Semana</p><h2 id="week">0</h2></div>
+      <div class="card"><p>Mês</p><h2 id="month">0</h2></div>
+    </div>
+
+    <div class="form-area">
+      <input type="text" id="clientName" placeholder="Nome do Cliente">
+
+      <select id="bikeSelect">
+        <option value="">Selecione a moto</option>
+        <optgroup label="Bajaj"><option>Pulsar 125</option><option>Pulsar 150</option><option>Pulsar NS160</option><option>Pulsar NS200</option><option>Dominar 200</option><option>Dominar 250</option><option>Dominar 400</option></optgroup>
+        <optgroup label="Triumph"><option>Speed 400</option><option>Scrambler 400X</option><option>Street Triple</option><option>Speed Triple</option><option>Tiger 900</option><option>Tiger 1200</option><option>Bonneville T100</option><option>Bonneville T120</option></optgroup>
+        <optgroup label="BMW"><option>G310R</option><option>G310GS</option><option>F750GS</option><option>F850GS</option><option>F900R</option><option>S1000R</option><option>S1000RR</option><option>R1250GS</option></optgroup>
+        <optgroup label="Kawasaki"><option>Ninja 300</option><option>Ninja 400</option><option>Ninja 650</option><option>Ninja ZX-6R</option><option>Ninja ZX-10R</option><option>Z400</option><option>Z650</option><option>Z900</option><option>Versys 650</option></optgroup>
+        <optgroup label="Yamaha"><option>Factor 150</option><option>Fazer 250</option><option>Lander 250</option><option>MT-03</option><option>MT-07</option><option>MT-09</option><option>R3</option><option>R6</option><option>R1</option></optgroup>
+        <optgroup label="Ducati"><option>Monster</option><option>Scrambler Icon</option><option>Hypermotard 950</option><option>Panigale V2</option><option>Panigale V4</option><option>Multistrada V4</option><option>Streetfighter V4</option></optgroup>
+        <optgroup label="KTM"><option>125 Duke</option><option>200 Duke</option><option>250 Duke</option><option>390 Duke</option><option>RC 390</option><option>790 Duke</option><option>890 Duke</option><option>1290 Super Duke</option></optgroup>
+      </select>
+
+      <select id="serviceType">
+        <option value="">Tipo de Agendamento</option>
+        <option>Serviço</option>
+        <option>Troca de óleo</option>
+        <option>Revisão</option>
+        <option>Diagnóstico</option>
+        <option>Recall</option>
+      </select>
+
+      <button class="btn" onclick="addSchedule()">+ Agendar</button>
+    </div>
+
+    <div class="filters">
+      <input type="date" id="dateFilter">
+      <input type="text" id="searchClient" placeholder="Buscar cliente">
+      <button class="btn" onclick="filterByDate()">Filtrar</button>
+      <button class="btn" onclick="searchClient()">Buscar</button>
+    </div>
+
+    <div class="charts">
+      <canvas id="dailyChart"></canvas>
+      <canvas id="monthlyChart"></canvas>
+    </div>
+
+    <div class="log" id="log"></div>
+  </div>
+
+  <script>
+  let schedules = JSON.parse(localStorage.getItem('schedules')) || [];
+
+  // 🔥 limpa dados corrompidos automaticamente
+  schedules = schedules.filter(s => s && s.date && s.name && s.bike);
+
+  let dailyChart, monthlyChart;
+
+  function toggleTheme() {
+    document.body.classList.toggle('light');
+    localStorage.setItem('theme', document.body.classList.contains('light') ? 'light' : 'dark');
+  }
+
+  function loadTheme() {
+    const theme = localStorage.getItem('theme');
+    if (theme === 'light') document.body.classList.add('light');
+  }
+
+  function saveData() {
+    localStorage.setItem('schedules', JSON.stringify(schedules));
+  }
+
+  function addSchedule() {
+  const name = clientName.value;
+  const bike = bikeSelect.value;
+  const service = serviceType.value;
+
+  if (!name || !bike || !service) {
+    return alert('Preencha todos os campos');
+  }
+
+  schedules.push({
+    date: new Date().toISOString(),
+    name,
+    bike,
+    service
+  });
+
+  saveData();
+  updateDashboard();
+  renderLog(schedules);
+  updateCharts();
+
+  clientName.value = '';
+  bikeSelect.value = '';
+  serviceType.value = '';
+}
+
+  function deleteSchedule(index) {
+    schedules.splice(index, 1); // 🔥 CORRETO
+    saveData();
+    updateDashboard();
+    renderLog(schedules);
+    updateCharts();
+  }
+
+  function updateDashboard() {
+    const now = new Date();
+
+    const todayCount = schedules.filter(s =>
+      new Date(s.date).toDateString() === now.toDateString()
+    ).length;
+
+    const startOfWeek = new Date();
+    startOfWeek.setDate(now.getDate() - now.getDay());
+
+    const weekCount = schedules.filter(s =>
+      new Date(s.date) >= startOfWeek
+    ).length;
+
+    const monthCount = schedules.filter(s =>
+      new Date(s.date).getMonth() === now.getMonth()
+    ).length;
+
+    today.innerText = todayCount;
+    week.innerText = weekCount;
+    month.innerText = monthCount;
+  }
+
+  function renderLog(data) {
+  log.innerHTML = '';
+
+  data
+    .filter(s => s && s.date && s.name && s.bike && s.service)
+    .slice()
+    .reverse()
+    .forEach((s, index) => {
+      log.innerHTML += `
+        <div class='log-item'>
+          ${new Date(s.date).toLocaleString()} | ${s.name} | ${s.bike} | ${s.service}
+          <button onclick="deleteSchedule(${data.length - 1 - index})"
+            style="margin-left:10px; background:red; color:white; border:none; padding:5px 8px; border-radius:6px; cursor:pointer;">
+            X
+          </button>
+        </div>
+      `;
+    });
+}
+  function filterByDate() {
+    const selected = dateFilter.value;
+    if (!selected) return;
+
+    renderLog(
+      schedules.filter(s =>
+        new Date(s.date).toISOString().split('T')[0] === selected
+      )
+    );
+  }
+
+  function searchClient() {
+    const term = searchClientInput.value.toLowerCase();
+
+    renderLog(
+      schedules.filter(s =>
+        s.name.toLowerCase().includes(term)
+      )
+    );
+  }
+
+  function groupByDay() {
+    const map = {};
+
+    schedules.forEach(s => {
+      if (!s || !s.date) return;
+
+      const key = new Date(s.date).toLocaleDateString();
+      map[key] = (map[key] || 0) + 1;
+    });
+
+    return map;
+  }
+
+  function groupByMonth() {
+    const map = {};
+
+    schedules.forEach(s => {
+      if (!s || !s.date) return;
+
+      const d = new Date(s.date);
+      const key = `${d.getMonth() + 1}/${d.getFullYear()}`;
+      map[key] = (map[key] || 0) + 1;
+    });
+
+    return map;
+  }
+
+  function updateCharts() {
+    if (dailyChart) dailyChart.destroy();
+    if (monthlyChart) monthlyChart.destroy();
+
+    dailyChart = new Chart(dailyChartEl, {
+      type: 'bar',
+      data: {
+        labels: Object.keys(groupByDay()),
+        datasets: [{ data: Object.values(groupByDay()) }]
+      }
+    });
+
+    monthlyChart = new Chart(monthlyChartEl, {
+      type: 'line',
+      data: {
+        labels: Object.keys(groupByMonth()),
+        datasets: [{ data: Object.values(groupByMonth()) }]
+      }
+    });
+  }
+
+  const log = document.getElementById('log');
+  const dateFilter = document.getElementById('dateFilter');
+  const searchClientInput = document.getElementById('searchClient');
+  const clientName = document.getElementById('clientName');
+  const bikeSelect = document.getElementById('bikeSelect');
+  const dailyChartEl = document.getElementById('dailyChart');
+  const monthlyChartEl = document.getElementById('monthlyChart');
+  const serviceType = document.getElementById('serviceType');
+
+  loadTheme();
+  updateDashboard();
+  renderLog(schedules);
+  updateCharts();
+</script>
+</body>
+</html>
